@@ -36,7 +36,7 @@ class App extends Component {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        publicToken: token
+        public_token
       })
     })
       .then(r => r.json())
