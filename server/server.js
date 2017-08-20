@@ -2,7 +2,7 @@ let express = require('express');
 let app = express();
 let bodyParser = require('body-parser');
 let plaid = require('plaid');
-let secrets = require('./secrets');
+let secrets = require('../secrets');
 let cookieParser = require('cookie-parser');
 
 app.use('/*', function (req, res, next) {
