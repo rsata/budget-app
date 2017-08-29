@@ -1,68 +1,69 @@
 import React, { Component } from 'react';
-import PlaidLink from 'react-plaid-link';
-import cookie from 'react-cookie';
+// uncomment when store cookie, etc etc
+// import PlaidLink from 'react-plaid-link';
 
-import './App.css';
+import { TransactionsList } from './components/TransactionsList';
 
 class App extends Component {
   constructor() {
     super();
     this.state = {
       plaidIsAuthorized: false,
-      plaidAccessToken: null
+      plaid_access_token: null,
+      transactions: null
     }
   }
 
   componentDidMount() {
-    if (!cookie.load('plaidAccessToken')) return;
+    // if (!document.cookie) return;
+    // console.log(document.cookie)
     this.getTransactions();
   }
 
-  getTransactions() {
+  getTransactions(access_token) {
     fetch('http://localhost:3001/transactions', {
       mode: 'cors',
-      credentials: 'include'
+      credentials: 'include',
+      body: {access_token}
     })
       .then(r => r.json())
-      .then(data => console.log(data))
+      .then(r => this.setState({transactions: r}))
       .catch(e => console.log(e));
   }
 
-  authenticate(token, metadata) {
+  authenticate(public_token, metadata) {
     fetch('http://localhost:3001/plaid-auth', {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        public_token
-      })
+      body: JSON.stringify({public_token})
     })
       .then(r => r.json())
-      .then(data => {
-        cookie.save('plaidAccessToken', data.access_token);
-      })
-      .catch(e => console.log(e));
+      .then(r => document.cookie = `${r.access_token}`)
+      .catch(e => alert(e));
   }
 
   render() {
-    if (!cookie.load('plaidAccessToken')) {
-      return (
-        <div>
-          <PlaidLink
-          publicKey="5c1a805e9ffc65645092b9efc2fadb"
-          product="connect"
-          env="tartan"
-          clientName="budget"
-          onSuccess={this.authenticate}
-          />
-        </div>
-      );
-    }
+    // if (!document.cookie) {
+    //   return (
+    //     <div>
+    //       <PlaidLink
+    //       publicKey="5c1a805e9ffc65645092b9efc2fadb"
+    //       product="connect"
+    //       env="development"
+    //       apiVersion="v2"
+    //       clientName="budget"
+    //       onSuccess={this.authenticate}
+    //       />
+    //     </div>
+    //   );
+    // }
+    if (!this.state.transactions) return(<div>Loading</div>);
     return (
       <div>
-        yay
+        <TransactionsList data={this.state.transactions.transactions}/>
       </div>
     );
   }
