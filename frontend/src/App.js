@@ -13,12 +13,7 @@ class App extends Component {
       data: null,
       staticData: null,
       spentToDate: null
-    }
-
-    // let monthlyIncome = this.state.staticData.monthlyIncome;
-    // let savingsGoal = this.state.staticData.savingsGoal;
-    // let monthlyExpenses = this.state.staticData.monthlyExpenses;
-    // let spentToDate = this.state.transactions.
+    };
   }
 
   componentDidMount() {
@@ -69,6 +64,14 @@ class App extends Component {
     const dailySpendingGoal = (monthlyIncome - savingsGoal - monthlyExpenses - spentToDate) / daysLeftInMonth;
     return dailySpendingGoal;
   }
+
+  /*
+  Save transaction IDs with their type if type is not general --> defaults to general
+  Get transaction IDs with their type from DB
+  If transaction is in the list, do not put it in general and take it out of the calculation
+  If change transaction type, saves to DB
+  If transaction type is general, removes from DB or does not save
+  */
 
   render() {
     // if (!document.cookie) {

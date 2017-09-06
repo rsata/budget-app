@@ -11,5 +11,5 @@ export const TransactionsList = (props) => {
         })}
       </ul>
     </div>
-  )
-}
+  );
+};

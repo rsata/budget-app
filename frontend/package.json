@@ -1,5 +1,5 @@
 {
-  "name": "screwyouwebpack2",
+  "name": "budget-frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -9,6 +9,8 @@
     "react-plaid-link": "^0.1.7"
   },
   "devDependencies": {
+    "eslint": "^4.6.1",
+    "eslint-plugin-react": "^7.3.0",
     "prop-types": "^15.5.10",
     "react-scripts": "0.9.2"
   },
@@ -16,6 +18,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint . --fix"
   }
 }

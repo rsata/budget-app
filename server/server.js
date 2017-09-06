@@ -35,6 +35,7 @@ let plaidClient = new plaid.Client(secrets.secrets.plaid_client_id, secrets.secr
 
 
 app.get('/transactions', (req, res) => {
+  // get transactions from plaid
   fs.readFile('./token', 'utf-8', (err, token) => {
     if (err) throw err;
     let access_token_static = token.trim();
@@ -47,6 +48,14 @@ app.get('/transactions', (req, res) => {
       res.json({data, staticData: secrets.staticData});
     });
   });
+});
+
+app.get('/saved_transactions', (req, res) => {
+
+});
+
+app.get('/budget_profile', (req, res) => {
+  
 });
 
 app.post('/plaid-auth', (req, res) => {
@@ -71,5 +80,5 @@ app.post('/plaid-auth', (req, res) => {
 });
 
 app.listen(3001, () => {
-  console.log('Example app listening on port 3001!')
-})
+  console.log('Example app listening on port 3001!');
+});
