@@ -1,5 +1,6 @@
 let MongoClient = require('mongodb').MongoClient;
 let assert = require('assert');
+let moment = require('moment');
 
 // Connection URL
 var url = 'mongodb://localhost:27017/budget_db';
@@ -16,3 +17,27 @@ MongoClient.connect(url, (err, db) => {
 
   db.close();
 });
+
+const mongoQueries = {
+  getAll: (collection) => {
+    return collection.find().toArray();
+  },
+
+  insert: (collection, id, type) => {
+    collection.insertOne({
+      lastEdited: moment().format(),
+      transaction_id: id,
+      type
+    });
+  },
+
+  delete: (collection, id) => {
+    collection.deleteOne({id});
+  },
+
+  edit: (collection, id, type) => {
+    collection.updateOne({ transaction_id: id}, {$set: {type}});
+  }
+};
+
+module.exports = mongoQueries;
