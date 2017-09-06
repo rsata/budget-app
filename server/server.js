@@ -30,19 +30,21 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
-let plaidClient = new plaid.Client(secrets.plaid_client_id, secrets.plaid_secret, secrets.plaid_public_key, plaid.environments.development);
+let plaidClient = new plaid.Client(secrets.secrets.plaid_client_id, secrets.secrets.plaid_secret, secrets.secrets.plaid_public_key, plaid.environments.development);
+
+
 
 app.get('/transactions', (req, res) => {
   fs.readFile('./token', 'utf-8', (err, token) => {
     if (err) throw err;
     let access_token_static = token.trim();
-    
+
     const now = moment();
     const today = now.format('YYYY-MM-DD');
-    const thirtyDaysAgo = now.subtract(30, 'days').format('YYYY-MM-DD');
+    const startOfMonth = moment().startOf('month').format('YYYY-MM-DD');
 
-    plaidClient.getTransactions(access_token_static, thirtyDaysAgo, today, (err, data) => {
-      res.json(data);
+    plaidClient.getTransactions(access_token_static, startOfMonth, today, (err, data) => {
+      res.json({data, staticData: secrets.staticData});
     });
   });
 });
@@ -54,17 +56,12 @@ app.post('/plaid-auth', (req, res) => {
     if(err) {
       res.send(err);
     } else {
-      // This is your Plaid access token - store somewhere persistent
-      // The access_token can be used to make Plaid API calls to
-      // retrieve accounts and transactions
       let access_token = exchangeTokenRes.access_token;
       fs.writeFile('./token', access_token, (err) => {
         if (err) console.log(err);
       });
-      // This is not the way to do this but don't want to build out login to store user with their token.  So work around is to send it back and store as cookie
+      // This is not the way to do this but don't want to build out login to store user with their token. Currently just store it locally
       // https://support.plaid.com/customer/en/portal/articles/2528324-storing-and-deleting-items-access-tokens-and-public-tokens
-      // res.json(access_token);
-
       // plaidClient.getConnectUser(access_token,(err, response) => {
       //   if (err) res.send(err);
       //   res.send(response)

@@ -10,8 +10,15 @@ class App extends Component {
     this.state = {
       plaidIsAuthorized: false,
       plaid_access_token: null,
-      transactions: null
+      data: null,
+      staticData: null,
+      spentToDate: null
     }
+
+    // let monthlyIncome = this.state.staticData.monthlyIncome;
+    // let savingsGoal = this.state.staticData.savingsGoal;
+    // let monthlyExpenses = this.state.staticData.monthlyExpenses;
+    // let spentToDate = this.state.transactions.
   }
 
   componentDidMount() {
@@ -27,7 +34,8 @@ class App extends Component {
       body: {access_token}
     })
       .then(r => r.json())
-      .then(r => this.setState({transactions: r}))
+      .then(r => this.setState({data: r.data, staticData: r.staticData}))
+      .then(r => this.sumTransactions())
       .catch(e => console.log(e));
   }
 
@@ -45,6 +53,23 @@ class App extends Component {
       .catch(e => alert(e));
   }
 
+  sumTransactions() {
+    let spentToDate = 0;
+    this.state.data.transactions.forEach(x => {
+      if (Math.abs(x.amount) < 400) { // check x.categories instead
+        spentToDate += x.amount;
+      }
+    });
+    this.setState({spentToDate});
+  }
+
+  calculateDailySpendingGoal(monthlyIncome, savingsGoal, monthlyExpenses, spentToDate) {
+    const date = new Date();
+    const daysLeftInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate() - date.getDate();
+    const dailySpendingGoal = (monthlyIncome - savingsGoal - monthlyExpenses - spentToDate) / daysLeftInMonth;
+    return dailySpendingGoal;
+  }
+
   render() {
     // if (!document.cookie) {
     //   return (
@@ -60,10 +85,15 @@ class App extends Component {
     //     </div>
     //   );
     // }
-    if (!this.state.transactions) return(<div>Loading</div>);
+    if (!this.state.data) return(<div>Loading</div>);
     return (
       <div>
-        <TransactionsList data={this.state.transactions.transactions}/>
+        <div>
+          Daily Spending Goal: {this.calculateDailySpendingGoal(this.state.staticData.monthlyIncome, this.state.staticData.savingsGoal, this.state.staticData.monthlyExpenses, this.state.spentToDate)}
+        </div>
+        <div>
+        </div>
+        <TransactionsList data={this.state.data.transactions}/>
       </div>
     );
   }
