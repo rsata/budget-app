@@ -9,8 +9,6 @@ let moment = require('moment');
 let query = require('./db');
 let MongoClient = require('mongodb').MongoClient;
 let assert = require('assert');
-// let parallel = require('async/parallel');
-let async = require('async');
 
 app.use('/*', function (req, res, next) {
 

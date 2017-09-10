@@ -10,9 +10,14 @@ class App extends Component {
     this.state = {
       plaidIsAuthorized: false,
       plaid_access_token: null,
-      data: null,
-      staticData: null,
-      spentToDate: null
+      calculated: null,
+      transactions: null,
+      savedTransactions: null,
+      budgetProfile: null,
+      savedTransactionsIds: [],
+      filteredTransactions: null,
+      filteredMonthlyTransactions: null,
+      filteredSavingsTransactions: null
     };
   }
 
@@ -20,18 +25,6 @@ class App extends Component {
     // if (!document.cookie) return;
     // console.log(document.cookie)
     this.getTransactions();
-  }
-
-  getTransactions(access_token) {
-    fetch('http://localhost:3001/transactions', {
-      mode: 'cors',
-      credentials: 'include',
-      body: {access_token}
-    })
-      .then(r => r.json())
-      .then(r => this.setState({data: r.data, staticData: r.staticData}))
-      .then(r => this.sumTransactions())
-      .catch(e => console.log(e));
   }
 
   authenticate(public_token, metadata) {
@@ -48,20 +41,60 @@ class App extends Component {
       .catch(e => alert(e));
   }
 
+  getTransactions(access_token) {
+    fetch('http://localhost:3001/transactions', {
+      mode: 'cors',
+      credentials: 'include',
+      body: {access_token}
+    })
+      .then(r => r.json())
+      .then(r => this.setState({transactions: r[2].transactions, savedTransactions: r[1], budgetProfile: r[0]}))
+      .then(r => this.filterIds())
+      .then(r => this.sumTransactions())
+      .catch(e => console.log(e));
+  }
+
+  filterTransactions() {
+    let monthlyExpenses = [];
+    this.state.transactionData.transactions.forEach(x => {
+      if (this.state.savedTransactions.indexOf(x.id) > -1) {
+        monthlyExpenses.push(x);
+      }
+    });
+    this.setState({filteredMonthlyTransactions: monthlyExpenses});
+  }
+
+  filterIds() {
+    this.state.savedTransactions.forEach(x => {
+      this.state.savedTransactionsIds.push(x.transaction_id);
+    });
+  }
+
   sumTransactions() {
     let spentToDate = 0;
-    this.state.data.transactions.forEach(x => {
-      if (Math.abs(x.amount) < 400) { // check x.categories instead
-        spentToDate += x.amount;
-      }
+    this.state.transactions.forEach(x => {
+      if (this.state.savedTransactionsIds.includes(x.transaction_id)) return;
+      spentToDate += x.amount;
     });
     this.setState({spentToDate});
   }
 
   calculateDailySpendingGoal(monthlyIncome, savingsGoal, monthlyExpenses, spentToDate) {
+    let savingsTotal = sumObject(savingsGoal);
+    let monthlyTotal = sumObject(monthlyExpenses);
+
+    function sumObject(o) {
+      return Object.keys(o).reduce((sum, key) => {
+        return sum + parseFloat(o[key]);
+      }, 0);
+    }
+
     const date = new Date();
     const daysLeftInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate() - date.getDate();
-    const dailySpendingGoal = (monthlyIncome - savingsGoal - monthlyExpenses - spentToDate) / daysLeftInMonth;
+
+    console.log(monthlyIncome, savingsTotal, monthlyTotal, spentToDate, daysLeftInMonth);
+
+    const dailySpendingGoal = (monthlyIncome - savingsTotal - monthlyTotal - spentToDate) / daysLeftInMonth;
     return dailySpendingGoal;
   }
 
@@ -88,15 +121,23 @@ class App extends Component {
     //     </div>
     //   );
     // }
-    if (!this.state.data) return(<div>Loading</div>);
+    console.log(this.state);
+    if (!this.state.transactions) return(<div>Loading</div>);
     return (
       <div>
         <div>
-          Daily Spending Goal: {this.calculateDailySpendingGoal(this.state.staticData.monthlyIncome, this.state.staticData.savingsGoal, this.state.staticData.monthlyExpenses, this.state.spentToDate)}
+          Daily Spending Goal: {
+            this.calculateDailySpendingGoal(this.state.budgetProfile[0].monthly_income, this.state.budgetProfile[0].savings_goals, this.state.budgetProfile[0].monthly_expenses, this.state.spentToDate)
+          }
         </div>
         <div>
+          <h1>Monthly Expenses</h1>
+          <TransactionsList data={this.state.savedTransactions}/>
         </div>
-        <TransactionsList data={this.state.data.transactions}/>
+        <div>
+          <h1>Transactions</h1>
+          <TransactionsList data={this.state.transactions}/>
+        </div>
       </div>
     );
   }
