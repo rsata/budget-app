@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 // import PlaidLink from 'react-plaid-link';
 
 import { TransactionsList } from './components/TransactionsList';
+import { FilteredTransactionsList } from './components/FilteredTransactionsList';
 
 class App extends Component {
   constructor() {
@@ -15,9 +16,11 @@ class App extends Component {
       savedTransactions: null,
       budgetProfile: null,
       savedTransactionsIds: [],
-      filteredTransactions: null,
-      filteredMonthlyTransactions: null,
-      filteredSavingsTransactions: null
+      filteredTransactions: [],
+      filteredIncomeTransactions: [],
+      filteredMonthlyTransactions: [],
+      filteredSavingsTransactions: [],
+      filteredOtherTransactions: []
     };
   }
 
@@ -43,6 +46,7 @@ class App extends Component {
 
   getTransactions(access_token) {
     fetch('http://localhost:3001/transactions', {
+      method: 'GET',
       mode: 'cors',
       credentials: 'include',
       body: {access_token}
@@ -51,22 +55,32 @@ class App extends Component {
       .then(r => this.setState({transactions: r[2].transactions, savedTransactions: r[1], budgetProfile: r[0]}))
       .then(r => this.filterIds())
       .then(r => this.sumTransactions())
+      .then(r => this.filterTransactions())
       .catch(e => console.log(e));
   }
 
+  // value='1' -->Income
+  // value='2' -->Monthly
+  // value='3' -->Savings
+  // value='4' -->General
+  // value='5' -->Other
+
   filterTransactions() {
-    let monthlyExpenses = [];
-    this.state.transactionData.transactions.forEach(x => {
-      if (this.state.savedTransactions.indexOf(x.id) > -1) {
-        monthlyExpenses.push(x);
+    this.state.transactions.forEach(x => {
+      if (this.state.savedTransactionsIds.indexOf(x.transaction_id) < 0) {
+        this.state.filteredTransactions.push(x);
       }
     });
-    this.setState({filteredMonthlyTransactions: monthlyExpenses});
   }
 
   filterIds() {
     this.state.savedTransactions.forEach(x => {
-      this.state.savedTransactionsIds.push(x.transaction_id);
+      if (x.type === '1') this.state.filteredIncomeTransactions.push(x);
+      if (x.type === '2') this.state.filteredMonthlyTransactions.push(x);
+      if (x.type === '3') this.state.filteredSavingsTransactions.push(x);
+      // if (x.type === '4') this.state.filteredTransactions.push(x);
+      if (x.type === '5') this.state.filteredOtherTransactions.push(x);
+      this.state.savedTransactionsIds.push(x.item.transaction_id);
     });
   }
 
@@ -98,6 +112,24 @@ class App extends Component {
     return dailySpendingGoal;
   }
 
+  setTransactionType(item, type) {
+    console.log(item);
+    // if (type === '1') return;
+    fetch('http://localhost:3001/set_transaction_type', {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({item, type})
+    })
+      .then(r => r.json())
+      .then(r => console.log(r))
+      .catch(err => console.log(err));
+  }
+
   /*
   Save transaction IDs with their type if type is not general --> defaults to general
   Get transaction IDs with their type from DB
@@ -122,7 +154,7 @@ class App extends Component {
     //   );
     // }
     console.log(this.state);
-    if (!this.state.transactions) return(<div>Loading</div>);
+    if (!this.state.transactions && this.state.filteredTransactions.length===0) return(<div>Loading</div>);
     return (
       <div>
         <div>
@@ -131,12 +163,24 @@ class App extends Component {
           }
         </div>
         <div>
+          <h1>Income</h1>
+          <FilteredTransactionsList data={this.state.filteredIncomeTransactions} listType='1' setTransactionType={this.setTransactionType}/>
+        </div>
+        <div>
           <h1>Monthly Expenses</h1>
-          <TransactionsList data={this.state.savedTransactions}/>
+          <FilteredTransactionsList data={this.state.filteredMonthlyTransactions} listType='2' setTransactionType={this.setTransactionType}/>
+        </div>
+        <div>
+          <h1>Savings</h1>
+          <FilteredTransactionsList data={this.state.filteredSavingsTransactions} listType='3' setTransactionType={this.setTransactionType}/>
+        </div>
+        <div>
+          <h1>Other</h1>
+          <FilteredTransactionsList data={this.state.filteredOtherTransactions} listType='5' setTransactionType={this.setTransactionType}/>
         </div>
         <div>
           <h1>Transactions</h1>
-          <TransactionsList data={this.state.transactions}/>
+          <TransactionsList data={this.state.filteredTransactions} listType='4' setTransactionType={this.setTransactionType}/>
         </div>
       </div>
     );

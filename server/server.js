@@ -87,6 +87,25 @@ app.get('/transactions', (req, res) => {
   });
 });
 
+app.post('/set_transaction_type', (req, res) => {
+  let item = req.body.item;
+  let type = req.body.type;
+  console.log(type);
+  if (type === '4') {
+    
+  }
+  MongoClient.connect(url, (err, db) => {
+    db.collection('saved_transactions').find({transaction_id: item.transaction_id}, (err, docs) => {
+      if(!docs.length && type !== '4') { // 4 --> general so don't need to save
+        db.collection('saved_transactions').insertOne({item, type}, (err, resp) => {
+          if (err) res.json(err);
+          res.json(resp);
+        });
+      }
+    });
+  });
+});
+
 app.get('/saved_transactions', (req, res) => {
   MongoClient.connect(url, (err, db) => {
     assert.equal(null, err);
